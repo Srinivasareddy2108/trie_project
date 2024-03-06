@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trie Operations</title>
+    <style>
+                /* General styles */
+        body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        background-color: #f4f4f4;
+        }
+
+        /* Container styles */
+        section {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        background-color: #ffffff;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        margin: auto;
+        max-width: 600px;
+        }
+
+        /* Button styles */
+        button {
+        padding: 10px;
+        margin: 5px;
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        cursor: pointer;
+        border-radius: 5px;
+        }
+
+        button:hover {
+        background-color: #45a049;
+        }
+
+        /* Output styles */
+        #output {
+        margin-top: 20px;
+        text-align: left;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        width: 100%;
+        display: none;
+        }
+
+        /* File input styles */
+        input[type="file"] {
+        display: none; /* Hide the file input */
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Trie Operations</h1>
+
+        <button onclick="insertWord()">Insert a Word</button>
+        <input type="file" id="fileInput" onchange="insertWordsFromFile()" />
+        <button onclick="chooseFile()">Insert All Words from File</button>
+        <button onclick="checkWordExists()">Check if Word Exists</button>
+        <!-- <button onclick="checkWordsFromFile()">Check Words from File</button> -->
+        <button onclick="printAllWords()">Print All Words</button>
+        <button onclick="printWordsFromPrefix()">Print Words from Prefix</button>
+
+        <div id="output"></div>
+    </div>
+
+    <script>
+        class TNode {
+            constructor() {
+                this.isEOW = false;
+                this.children = new Array(26);
+            }
+        }
+
+        class Trie {
+            constructor() {
+                this.root = new TNode();
+            }
+
+            insertWord(word) {
+                let temp = this.root;
+                for (let i = 0; i < word.length; i++) {
+                    const ch = word.charAt(i);
+                    const idx = ch.charCodeAt(0) - 'a'.charCodeAt(0);
+                    if (temp.children[idx] == null) {
+                        const newNode = new TNode();
+                        temp.children[idx] = newNode;
+                    }
+                    temp = temp.children[idx];
+                }
+                temp.isEOW = true;
+            }
+
+            hasWord(word) {
+                let temp = this.root;
+                for (let i = 0; i < word.length; i++) {
+                    const ch = word.charAt(i);
+                    const idx = ch.charCodeAt(0) - 'a'.charCodeAt(0);
+                    if (temp.children[idx] == null) {
+                        return false;
+                    }
+                    temp = temp.children[idx];
+                }
+                return temp.isEOW;
+            }
+
+            getAllWords() {
+                const ans = [];
+                const path = [];
+                this.helper(this.root, path, ans);
+                return ans;
+            }
+
+            helper(root, path, ans) {
+                if (root.isEOW) {
+                    ans.push(path.join(''));
+                }
+
+                for (let i = 0; i < 26; i++) {
+                    if (root.children[i] != null) {
+                        const ch = String.fromCharCode(i + 'a'.charCodeAt(0));
+                        path.push(ch);
+                        this.helper(root.children[i], path, ans);
+                        path.pop();
+                    }
+                }
+            }
+
+            autoSuggest(prefix) {
+                const ans = [];
+                let temp = this.root;
+                for (const ch of prefix) {
+                    const idx = ch.charCodeAt(0) - 'a'.charCodeAt(0);
+                    if (temp.children[idx] == null) {
+                        return ans;
+                    }
+                    temp = temp.children[idx];
+                }
+                const path = prefix.split('');
+                this.helper(temp, path, ans);
+                return ans;
+            }
+        }
+
+        const trie = new Trie();
+
+        function insertWord() {
+            const word = prompt("Enter the word to insert:");
+            trie.insertWord(word);
+            showOutput(`Word inserted: ${word}`);
+        }
+
+        function chooseFile() {
+            // Trigger the file input click event
+            document.getElementById('fileInput').click();
+        }
+
+        function insertWordsFromFile() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+
+            if (file) {
+                const reader = new FileReader();
+
+                reader.onload = function (e) {
+                    const words = e.target.result.split('\n');
+                    words.forEach(word => {
+                        trie.insertWord(word.trim());
+                    });
+                    showOutput("Words inserted from file");
+                };
+
+                reader.readAsText(file);
+            } else {
+                showOutput("Please select a file");
+            }
+        }
+
+        function checkWordExists() {
+            const word = prompt("Enter the word to check:");
+            const exists = trie.hasWord(word);
+            showOutput(`Word exists: ${exists}`);
+        }
+
+        // function checkWordsFromFile() {
+        //     showOutput("Checking all words from the file");
+        //     // Assume you have a file input logic here
+        // }
+
+        function printAllWords() {
+            const allWords = trie.getAllWords();
+            showOutput(`All words from file are: ${allWords.join(', ')}`);
+        }
+
+        function printWordsFromPrefix() {
+            const prefix = prompt("Enter the prefix:");
+            const suggestions = trie.autoSuggest(prefix);
+            showOutput(`Words from prefix "${prefix}": ${suggestions.join(', ')}`);
+        }
+
+        function showOutput(message) {
+            const outputElement = document.getElementById('output');
+            outputElement.innerHTML = `<p>${message}</p>`;
+            outputElement.style.display = 'block';
+        }
+    </script>
+
+</body>
+</html>
